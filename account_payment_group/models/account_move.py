@@ -28,8 +28,9 @@ class AccountMove(models.Model):
         """
         for rec in self:
             # Ver como resolver esto
-            rec.payment_group_ids = rec.payment_move_line_ids.mapped(
-                'payment_id.payment_group_id')
+            rec.payment_group_ids = rec._get_reconciled_payments().mapped('payment_group_id')
+            # rec.payment_group_ids = rec.payment_move_line_ids.mapped(
+            #     'payment_id.payment_group_id')
 
     def _get_tax_factor(self):
         self.ensure_one()

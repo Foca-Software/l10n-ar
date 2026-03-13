@@ -18,7 +18,7 @@ class AccountJournal(models.Model):
         column2='inbound_payment_method',
         domain=[('payment_type', '=', 'inbound')],
         string='Inbound Payment Methods (Legacy)',
-        compute='_compute_inbound_payment_method_line_ids',
+        compute='_compute_inbound_payment_method_id',
         store=True,
         readonly=False,
         help="Manual: Reciba el pago en efectivo, cheque o cualquier otro método fuera de Odoo.\n"
@@ -45,18 +45,10 @@ class AccountJournal(models.Model):
     at_least_one_inbound = fields.Boolean(compute='_methods_compute', store=True)
     at_least_one_outbound = fields.Boolean(compute='_methods_compute', store=True)
 
-    @api.depends('type', 'currency_id')
-    def _compute_inbound_payment_method_line_ids(self):
+    @api.depends('inbound_payment_method_line_ids')
+    def _compute_inbound_payment_method_id(self):
         for journal in self:
-            pay_method_line_ids_commands = [Command.clear()]
-            if journal.type in ('bank', 'cash'):
-                default_methods = journal._default_inbound_payment_methods()
-                pay_method_line_ids_commands += [Command.create({
-                    'name': pay_method.name,
-                    'payment_method_id': pay_method.id,
-                }) for pay_method in default_methods]
-            journal.inbound_payment_method_line_ids = pay_method_line_ids_commands
-            journal.inbound_payment_method_ids = journal.inbound_payment_method_line_ids.mapped('payment_method_id').ids
+            journal.inbound_payment_method_ids = [Command.set(journal.inbound_payment_method_line_ids.mapped('payment_method_id').ids)]
 
     @api.depends('type', 'currency_id')
     def _compute_outbound_payment_method_line_ids(self):
