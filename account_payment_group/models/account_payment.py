@@ -159,6 +159,21 @@ class AccountPayment(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         """ If a payment is created from anywhere else we create the payment group in top """
+        
+        for vals in vals_list:
+            if 'communication' in vals:
+                vals['memo'] = vals.pop('communication')
+
+            if 'payment_date' in vals:
+                vals['date'] = vals.pop('payment_date')
+                    
+            if 'payment_type' in vals and vals['payment_type'] == 'transfer':
+                vals['payment_type'] = 'inbound'
+                vals['is_internal_transfer'] = True
+            
+            if 'payment_method_id' in vals:
+                vals['payment_method_line_id'] = vals.pop('payment_method_id') 
+    
         recs = super().create(vals_list)
         if self._context.get('avoid_create_payment_group'):
             return recs
