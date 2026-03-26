@@ -8,7 +8,7 @@
             <xpath expr="//page[@name='fiscal_data']" position="after">
                 <page string="Padron Type" name="line_padron_type_ids_page">
     				<button name="import_padron_server_partner" string="Importar Padrones" type="object" class="oe_highlight" 
-        				groups="account_padron_withholding_perception.padron_retention_perception_responsible_group"/>
+        				groups="account_padron_withholding_perception.padron_retention_perception_responsible_group" invisible="1"/>
                     <field name="line_padron_type_ids" widget="many2many" groups="account_padron_withholding_perception.padron_retention_perception_responsible_group"/>
                 </page>
             </xpath>
