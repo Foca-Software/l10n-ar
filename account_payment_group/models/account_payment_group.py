@@ -743,7 +743,8 @@ class AccountPaymentGroup(models.Model):
             if counterpart_aml and rec.to_pay_move_line_ids:
                 #(counterpart_aml + (rec.to_pay_move_line_ids)).reconcile(
                 #    writeoff_acc_id, writeoff_journal_id)
-                (counterpart_aml + (rec.to_pay_move_line_ids)).reconcile()
+                if not counterpart_aml.reconciled and not rec.to_pay_move_line_ids.reconciled:
+                    (counterpart_aml + (rec.to_pay_move_line_ids)).reconcile()
 
             rec.state = 'posted'
             if rec.receiptbook_id.mail_template_id:
