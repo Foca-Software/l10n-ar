@@ -11,7 +11,7 @@
                         type="object"
                         string="Calcular Percepciones"
                         class="btn-primary"
-                        invisible="move_type != 'out_invoice' or not invoice_date or not line_ids"
+                        invisible="1"
                         help="Calcula y aplica automáticamente las percepciones correspondientes"/>
             </xpath>
         </field>
