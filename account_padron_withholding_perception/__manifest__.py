@@ -21,6 +21,7 @@
         'l10n_account_withholding_tax',
         'l10n_ar_payment_bundle',
         'l10n_ar_withholding',
+        'account_payment_group',
     ],
     "data": [
         'security/security.xml',
