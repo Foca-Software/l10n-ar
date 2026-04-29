@@ -21,5 +21,18 @@
             </block>
         </field>
     </record>
+
+    <record id="view_res_config_settings_arba_withholding_journal" model="ir.ui.view">
+        <field name="name">res.config.settings.arba.withholding.journal</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='invoicing_settings']" position="inside">
+                <setting string="ARBA Withholding Journal" help="Journal used to generate ARBA withholding payments automatically.">
+                    <field name="arba_withholding_journal_id" domain="[('company_id','=',company_id)]"/>
+                </setting>
+            </xpath>
+        </field>
+    </record>
 </odoo>
 

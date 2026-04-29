@@ -8,6 +8,12 @@ class ResConfigSettings(models.TransientModel):
     check_census_on_create = fields.Boolean(
         string="¿Looking for aliquots of withholdings and perceptions in partner?",
     )
+    arba_withholding_journal_id = fields.Many2one(
+        "account.journal",
+        string="ARBA Withholding Journal",
+        config_parameter="account_padron_withholding_perception.arba_withholding_journal_id",
+    )
+
 
     @api.model
     def get_values(self):
@@ -16,6 +22,7 @@ class ResConfigSettings(models.TransientModel):
             check_census_on_create = self.env['ir.config_parameter'].sudo().get_param(
                 'account_padron_withholding_perception.check_census_on_create'))
         return res
+
 
     def set_values(self):
         self.ensure_one()

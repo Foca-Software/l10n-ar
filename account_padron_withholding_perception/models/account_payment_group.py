@@ -1,7 +1,10 @@
 from odoo import models, _
+from odoo.exceptions import UserError
+
 
 class AccountPaymentGroup(models.Model):
     _inherit = "account.payment.group"
+
 
     def compute_withholdings(self):
         self.ensure_one()
@@ -63,6 +66,7 @@ class AccountPaymentGroup(models.Model):
         
         return result
 
+
     def _find_arba_alicuot(self):
         domain = [
             ('partner_id', '=', self.partner_id.id),
@@ -72,10 +76,12 @@ class AccountPaymentGroup(models.Model):
         ]
         return self.env['res.partner.arba_alicuot'].search(domain, limit=1)
 
+
     def _find_padron_type(self, arba_line):
         return arba_line.padron_line_id.padron_type_id.filtered(
             lambda x: x.company_id.id == self.company_id.id
         )
+
 
     def _total_amount_retention(self, base_minimum_retention, percent_retention_arba, minimum_calcule_retention):
         """
@@ -99,22 +105,34 @@ class AccountPaymentGroup(models.Model):
                         total_to_discount += withholding_applied
         return total_to_discount
 
+
     def _get_all_to_pay_lines(self):
         return self.to_pay_move_line_ids.filtered(lambda x: x.move_id.move_type in ["in_invoice", "in_refund"])
 
+
     def _create_arba_withholding_payment(self, tax, amount_retention, base_retention):
         self.ensure_one()
-        
-        # Buscar el journal de retenciones
-        withholding_journal = self.env['account.journal'].search([
-            ('type', 'in', ['bank', 'cash']),
-            ('company_id', '=', self.company_id.id)
-        ], limit=1)
-        
-        if not withholding_journal:
-            return
-        
-        # Crear el payment de retención por alicuota
+
+        config_param = self.env['ir.config_parameter'].sudo()
+
+        journal_id = config_param.get_param(
+            'account_padron_withholding_perception.arba_withholding_journal_id'
+        )
+
+        if not journal_id:
+            raise UserError(_("Configure an ARBA Withholding Journal in Accounting Settings."))
+
+        withholding_journal = self.env['account.journal'].browse(int(journal_id))
+
+        if withholding_journal.company_id != self.company_id:
+            raise UserError(_("The ARBA journal must belong to the same company as the payment group."))
+
+        # reutilizamos método de pago del grupo si existe
+        payment_method_line = withholding_journal.outbound_payment_method_line_ids[:1]
+
+        if not payment_method_line:
+            raise UserError(_("The selected journal has no outbound payment method configured."))
+
         payment_vals = {
             'payment_group_id': self.id,
             'payment_type': 'outbound',
@@ -124,7 +142,8 @@ class AccountPaymentGroup(models.Model):
             'currency_id': self.currency_id.id,
             'date': self.payment_date,
             'journal_id': withholding_journal.id,
+            'payment_method_line_id': payment_method_line.id,
             'memo': _('ARBA Withholding - Tax: %s') % tax.name,
         }
-        
-        self.env['account.payment'].create([payment_vals])
+
+        self.env['account.payment'].create(payment_vals)
