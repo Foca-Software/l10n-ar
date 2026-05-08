@@ -759,10 +759,8 @@ class AccountPaymentGroup(models.Model):
             # porque la cuenta podria ser no recivible y ni conciliable
             # (por ejemplo en sipreco)
             if counterpart_aml and rec.to_pay_move_line_ids:
-                #(counterpart_aml + (rec.to_pay_move_line_ids)).reconcile(
-                #    writeoff_acc_id, writeoff_journal_id)
-                if not counterpart_aml.reconciled and not rec.to_pay_move_line_ids.reconciled:
-                    (counterpart_aml + (rec.to_pay_move_line_ids)).reconcile()
+                if not all(counterpart_aml.mapped('reconciled')) and not all(rec.to_pay_move_line_ids.mapped('reconciled')):
+                    (counterpart_aml + rec.to_pay_move_line_ids).reconcile()
 
             rec.state = 'posted'
             if rec.receiptbook_id.mail_template_id:
