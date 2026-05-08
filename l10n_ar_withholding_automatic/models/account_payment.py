@@ -57,6 +57,8 @@ class AccountPayment(models.Model):
                     amount_retention,
                     total_debt_untaxed
                 )
+                # Actualizar el importe del pago restando la retención calculada (esto se aplica por petición de Maylin, para tener en cuenta la retención al total)
+                self._onchange_withholdings()
 
         if display_msg:
             self.message_post(body=display_msg)
