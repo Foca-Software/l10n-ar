@@ -164,7 +164,7 @@
                                 </td>
                                 <!--agregado de memo-->
                                 <td>
-                                    <span t-if="p.ref" t-field="p.ref"/>
+                                    <span t-if="p.memo" t-field="p.memo"/>
                                 </td>
                                 <t t-if="o.receiptbook_id.name == 'Recibo de pagos'">
                                     <td>
@@ -190,25 +190,26 @@
                         </tbody>
 
                         <tbody class="invoice_tbody">
-                            <!--   y aca recorremos y agregamos las retenciones, una por linea, y mostramos solo el nombre del impuesto y el amount -->
-                            <tr t-foreach="o.l10n_ar_withholding_line_ids" t-as="w" >
-                                <td >
-                                    <span t-if="w.tax_id" t-field="w.tax_id"/>
-                                </td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td >
-                                    <span t-if="w.amount" t-field="w.amount" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"/>
-                                </td>
-                            </tr>
+                            <t t-foreach="o.payment_ids" t-as="p">
+                                <tr t-foreach="p.l10n_ar_withholding_line_ids" t-as="w" >
+                                    <td >
+                                        <span t-if="w.tax_id" t-field="w.tax_id"/>
+                                    </td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td >
+                                        <span t-if="w.amount" t-field="w.amount" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"/>
+                                    </td>
+                                </tr>
+                            </t>
                         </tbody>
 
 
 
 
 
-                        <t t-set="total_withholdings" t-value="sum(o.l10n_ar_withholding_line_ids.mapped('amount'))"/>
+                        <t t-set="total_withholdings" t-value="sum(o.payment_ids.mapped('l10n_ar_withholding_line_ids').mapped('amount'))"/>
                         <t t-set="total_without_withholdings" t-value="o.payments_amount - total_withholdings"/>
                         <tfoot>
                             <tr class="border-black">
@@ -308,7 +309,7 @@
                                 <td style="padding:0.50rem">
                                     <t t-set="payments" t-value="[]"/>
                                     <t t-foreach="o.payment_ids" t-as="p">
-                                        <t t-foreach="p.invoice_line_ids.ids" t-as="i">
+                                        <t t-foreach="p.move_id.line_ids.ids" t-as="i">
                                             <t t-set="payments" t-value="payments + [i]"/>
                                         </t>
                                     </t>

@@ -639,12 +639,30 @@ class AccountPaymentGroup(models.Model):
             if partner_id:
                 if type(partner_id) == int:
                     partner_id = self.env['res.partner'].browse(partner_id)
-                if partner_id.customer_rank:
-                    rec['partner_type'] = 'customer'
-                if partner_id.supplier_rank:
-                    rec['partner_type'] = 'supplier'
+                # Determinar partner_type desde el move_type de la factura si está disponible
+                invoice_id = self._context.get('invoice_id')
+                if invoice_id:
+                    invoice = self.env['account.move'].browse(invoice_id)
+                    if invoice.move_type in ('out_invoice', 'out_refund', 'out_receipt'):
+                        rec['partner_type'] = 'customer'
+                    else:
+                        rec['partner_type'] = 'supplier'
+                else:
+                    # fallback a ranks solo si no hay factura
+                    if partner_id.customer_rank and not partner_id.supplier_rank:
+                        rec['partner_type'] = 'customer'
+                    elif partner_id.supplier_rank:
+                        rec['partner_type'] = 'supplier'
             rec['to_pay_move_line_ids'] = [(6, False, to_pay_move_line_ids)]
 
+            # Recalcular receiptbook con el partner_type ya definido
+            if rec.get('partner_type'):
+                receiptbook = self.env['account.payment.receiptbook'].search([
+                    ('partner_type', '=', rec['partner_type']),
+                    ('company_id', '=', rec.get('company_id', self.env.company.id)),
+                ], limit=1)
+                if receiptbook:
+                    rec['receiptbook_id'] = receiptbook.id
         return rec
 
     def button_journal_entries(self):
