@@ -103,15 +103,21 @@ class AccountPayment(models.Model):
 
     @api.onchange('payment_group_id')
     def onchange_payment_group_id(self):
-        # now we change this according when use save & new the context from the payment was erased and we need to use some data.
-        # this change is due this odoo change https://github.com/odoo/odoo/commit/c14b17c4855fd296fd804a45eab02b6d3566bb7a
         if self.payment_group_id:
             self.date = self.payment_group_id.payment_date
             self.partner_type = self.payment_group_id.partner_type
             self.partner_id = self.payment_group_id.partner_id
-            self.payment_type = 'inbound' if self.payment_group_id.partner_type  == 'customer' else 'outbound'
-            self.amount = self.payment_group_id.payment_difference
-
+            self.payment_type = 'inbound' if self.payment_group_id.partner_type == 'customer' else 'outbound'
+            already_paid = sum(
+                self.payment_group_id.payment_ids
+                .filtered(lambda p: p._origin.id)
+                .mapped('amount')
+            )
+            remaining = self.payment_group_id.to_pay_amount - already_paid
+            self.amount = max(remaining, 0)
+            # Forzar también unreconciled_amount para que to_pay_amount se recalcule correctamente
+            self.unreconciled_amount = max(remaining, 0) - self.selected_debt
+            
     @api.depends('amount', 'other_currency', 'amount_company_currency')
     def _compute_exchange_rate(self):
         for rec in self:
@@ -283,4 +289,3 @@ class AccountPayment(models.Model):
             else:
                 rec.label_journal_id = "Diario de destino"
                 rec.label_destination_journal_id = "Diario de origen"
-

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_payment_group_withholding_lines" model="ir.ui.view">
+        <field name="name">account.payment.group.withholding.lines</field>
+        <field name="model">account.payment.group</field>
+        <field name="inherit_id" ref="account_payment_group.view_account_payment_group_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='payment_ids']" position="attributes">
+                <attribute name="context">{
+                    'form_view_ref': 'account_payment_group.view_account_payment_from_group_form',
+                    'list_view_ref': 'account_payment_group.view_account_payment_from_group_list',
+                    'kanban_view_ref': 'account_payment_group.view_account_payment_kanban_mobile',
+                    'default_move_journal_types': ('bank', 'cash'),
+                    'default_company_id': company_id,
+                    'default_amount': payment_difference
+                }</attribute>
+            </xpath>
+
+            <xpath expr="//notebook/page[2]" position="after">
+                <page string="Retenciones" invisible="partner_type != 'supplier'">
+                    <field name="withholding_line_ids" readonly="1">
+                        <list>
+                            <field name="tax_id" string="Impuesto"/>
+                            <field name="name" string="Número"/>
+                            <field name="base_amount" string="Importe Base"/>
+                            <field name="amount" string="Importe"/>
+                            <button name="%(l10n_ar_tax.action_report_withholding_certificate)d"
+                                    icon="fa-print"
+                                    title="Imprimir comprobante de retención"
+                                    type="action"
+                                    invisible="amount == 0"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

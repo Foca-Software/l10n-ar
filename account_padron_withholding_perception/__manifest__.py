@@ -33,5 +33,6 @@
         'views/account_padron_retention_perception_type_view.xml',
         'views/res_partner_view.xml',
         'views/account_tax_view.xml',
+        'views/account_payment_group_withholding_view.xml',
     ],
 }
