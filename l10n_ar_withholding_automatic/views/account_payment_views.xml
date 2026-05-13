@@ -10,7 +10,7 @@
                         class="oe_highlight" 
                         string="Calcular retenciones" 
                         type="object" 
-                        invisible="state != 'draft' or partner_type != 'supplier'"/>
+                        invisible="True"/>
             </button>
         </field>
     </record>
