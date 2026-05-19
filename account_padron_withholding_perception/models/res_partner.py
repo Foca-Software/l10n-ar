@@ -82,6 +82,14 @@ class ResPartnerArbaAlicuot(models.Model):
     _description = "Partner ARBA Aliquot"
     _order = "to_date desc, from_date desc, tag_id, company_id"
 
+    _sql_constraints = [
+            (
+                'unique_alicuot_partner_period',
+                'unique(partner_id, from_date, to_date, tag_id, company_id)',
+                'Ya existe una alícuota para este socio, fecha y empresa.'
+            )
+        ]
+
     partner_id = fields.Many2one(
         'res.partner',
         required=True,
