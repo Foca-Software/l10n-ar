@@ -683,7 +683,17 @@ class AccountPaymentGroup(models.Model):
         self.write({'state': 'posted'})
 
     def cancel(self):
-        self.mapped('payment_ids').action_cancel()
+        for rec in self:
+            # Desreconciliar los pagos del grupo sin cancelarlos,
+            # para que las facturas queden pendientes de cobro
+            # pero los pagos (cheques, etc) sigan activos
+            payment_move_lines = rec.payment_ids.mapped('move_id.line_ids')
+            partials = self.env['account.partial.reconcile'].search([
+                '|',
+                ('debit_move_id', 'in', payment_move_lines.ids),
+                ('credit_move_id', 'in', payment_move_lines.ids),
+            ])
+            partials.unlink()
         self.write({'state': 'cancel'})
         return True
 
