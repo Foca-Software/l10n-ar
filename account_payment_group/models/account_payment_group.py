@@ -435,6 +435,12 @@ class AccountPaymentGroup(models.Model):
 
     def payment_print(self):
         # self.sent = True
+        attachments = self.env['ir.attachment'].search([
+            ('res_model', '=', 'account.payment.group'),
+            ('res_id', 'in', self.ids),
+            ('name', 'like', '.pdf'),
+        ])
+        attachments.unlink()
         report = self.env['ir.actions.report']._get_report_from_name('account_payment_group.report_payment_group')
         return report.report_action(docids=self)
 
