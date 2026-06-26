@@ -493,6 +493,11 @@ class AccountPaymentGroup(models.Model):
                 ('debit_move_id', 'in', payment_lines.ids)])
             lines |= reconciles.mapped('credit_move_id')
 
+            # NC: se concilian contra facturas, no contra el pago — las tomamos de to_pay_move_line_ids. --SW-1925
+            credit_note_lines = rec.to_pay_move_line_ids.filtered(
+                lambda l: l.move_id.move_type in ('in_refund', 'out_refund'))
+            lines |= credit_note_lines
+
             rec.matched_move_line_ids = lines - payment_lines
 
     @api.depends('payment_ids.move_id.line_ids')
