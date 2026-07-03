@@ -19,6 +19,12 @@ class AccountPaymentGroup(models.Model):
         if self.partner_type != 'supplier':
             return result
 
+        if not self.partner_id.vat:
+            raise UserError(_(
+                'El proveedor "%s" no tiene CUIT/VAT configurado. '
+                'Por favor completá el número de identificación fiscal antes de calcular retenciones.'
+            ) % self.partner_id.name)
+
         arba_line = self._find_arba_alicuot()
         if not arba_line:
             return result
@@ -113,7 +119,7 @@ class AccountPaymentGroup(models.Model):
             ('from_date', '<=', self.payment_date),
             ('company_id', '=', self.company_id.id),
         ]
-        return self.env['res.partner.arba_alicuot'].search(domain, limit=1)
+        return self.env['res.partner.arba_alicuot'].search(domain, limit=1, order='is_refinery_alicuot asc, to_date desc, from_date desc')
 
     def _find_padron_type(self, arba_line):
         return arba_line.padron_line_id.padron_type_id.filtered(
