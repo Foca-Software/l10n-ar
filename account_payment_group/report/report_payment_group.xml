@@ -295,7 +295,7 @@
                         </thead>
                         <tbody class="invoice_tbody">
                             <t t-set="facturas" t-value="0"/>
-                            <tr t-foreach="o.matched_move_line_ids" t-as="f" style="font-size:12px">
+                            <tr t-foreach="o.to_pay_move_line_ids" t-as="f" style="font-size:12px">
                                 <td style="padding:0.50rem">
                                     <span t-if="f.move_id" t-field="f.move_id"/>
                                 </td>
@@ -351,7 +351,7 @@
                                 </td>
                                 <td class="text-right">
                                     <span t-set="total_dolars" t-value="0.0"/>
-                                    <span t-foreach="o.matched_move_line_ids" t-as="f" t-if="f.amount_currency and f.is_same_currency != True">
+                                    <span t-foreach="o.to_pay_move_line_ids" t-as="f" t-if="f.amount_currency and f.is_same_currency != True">
                                         <span t-set="total_dolars" t-value="total_dolars + f.amount_currency"/>
                                     </span>
                                     u$s
@@ -359,7 +359,7 @@
                                 </td>
                                 <td class="text-right">
                                     <span t-set="total_pesos" t-value="0.0"/>
-                                    <span t-foreach="o.matched_move_line_ids" t-as="f" t-if="f.balance">
+                                    <span t-foreach="o.to_pay_move_line_ids" t-as="f" t-if="f.balance">
                                         <span t-set="total_pesos" t-value="total_pesos + f.balance"/>
                                     </span>
                                     <span t-esc="total_pesos" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"/>
