@@ -14,17 +14,16 @@ class AccountMoveLine(models.Model):
         return
 
     def _get_price_total_and_subtotal(
-            self, price_unit=None, quantity=None, discount=None, currency=None,
-            product=None, partner=None, taxes=None, move_type=None):
-        invoice = self.move_id.reversed_entry_id or self.move_id
-        invoice_date = invoice.invoice_date or fields.Date.context_today(self)
-
-        if not partner and invoice.partner_id:
-            partner = invoice.partner_id
-        context_dict = {'invoice_date': invoice_date}
-        if invoice.partner_id:
-            context_dict['partner_id'] = invoice.partner_id.id
-        self = self.with_context(**context_dict)
-        return super(AccountMoveLine, self)._get_price_total_and_subtotal(
-            price_unit=price_unit, quantity=quantity, discount=discount, currency=currency,
-            product=product, partner=partner, taxes=taxes, move_type=move_type)
+                self, price_unit=None, quantity=None, discount=None, currency=None,
+                product=None, partner=None, taxes=None, move_type=None):
+            invoice = self.move_id.reversed_entry_id or self.move_id
+            invoice_date = invoice.invoice_date or fields.Date.context_today(self)
+            if not partner and invoice.partner_id:
+                partner = invoice.partner_id
+            context_dict = {'invoice_date': invoice_date, 'date': invoice_date}
+            if invoice.partner_id:
+                context_dict['partner_id'] = invoice.partner_id.id
+            self = self.with_context(**context_dict)
+            return super(AccountMoveLine, self)._get_price_total_and_subtotal(
+                price_unit=price_unit, quantity=quantity, discount=discount, currency=currency,
+                product=product, partner=partner, taxes=taxes, move_type=move_type)
