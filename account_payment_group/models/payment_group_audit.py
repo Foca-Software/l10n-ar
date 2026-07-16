@@ -22,6 +22,8 @@ class AccountPaymentGroup(models.Model):
             for rec in self:
                 old_snapshot[rec.id] = {f: rec[f] for f in fields_to_audit}
         audit_debt = any((k in vals for k in DEBT_LINE_VALS_KEYS))
+        if audit_debt:
+            self._check_debt_lines_locked_by_payments()
         debt_before = {}
         if audit_debt:
             for rec in self:
@@ -51,6 +53,20 @@ class AccountPaymentGroup(models.Model):
                     _logger.info('AUDIT grupo %s cambios=%s', rec.id, [c[0] for c in changes])
                     rec._post_group_changed_audit(changes)
         return result
+
+    def _check_debt_lines_locked_by_payments(self):
+        """si el grupo ya tiene al menos un medio de pago cargado
+        (payment_ids), no se permite agregar ni quitar líneas a pagar
+        (to_pay_move_line_ids / debt_move_line_ids). Primero hay que
+        eliminar los medios de pago cargados.
+        """
+        for rec in self:
+            if rec.payment_ids:
+                raise UserError(_(
+                    'No se pueden modificar las líneas a pagar mientras '
+                    'existan medios de pago cargados. Elimine primero los '
+                    'medios de pago.'
+                ))
 
     def _is_auditable_field(self, name):
         field = self._fields.get(name)
