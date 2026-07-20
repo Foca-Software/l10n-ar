@@ -559,8 +559,9 @@ class AccountPaymentGroup(models.Model):
         if self._context.get('pop_up'):
             return
         for rec in self:
-            rec.payment_ids = [(2, item.id, 0) for item in rec.payment_ids]
-            rec.add_all()
+            if rec.partner_id:
+                rec.payment_ids = [(2, item.id, 0) for item in rec.payment_ids]
+                rec.add_all()
 
     def onchange(self, values, field_name, field_onchange):
         """Necesitamos hacer esto porque los onchange que agregan lineas,
