@@ -9,7 +9,7 @@
     'installable': True,
     "depends": [
         "account",
-        "account_payment_pro"
+        "l10n_ar_tax"
     ],
     "data": [
         'security/security.xml',
