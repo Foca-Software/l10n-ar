@@ -4,41 +4,33 @@ class AccountBankStatementLine(models.Model):
     _inherit = "account.bank.statement.line"
 
     def button_cancel_reconciliation(self):
-        """On statement line cancel, cancel and delete related payment group.
-        We couldnt overwrite payments "unreconcile" because it is call
-        with payment_to_unreconcile and payment_to_cancel and we only want to
-        delete payment_to_cancel
-        """
-        aml_to_unbind = self.env['account.move.line']
-        aml_to_cancel = self.env['account.move.line']
         payment_to_cancel = self.env['account.payment']
         for st_line in self:
-            aml_to_unbind |= st_line.journal_entry_ids
-            for line in st_line.journal_entry_ids:
-                if st_line.move_name and line.payment_id.payment_reference \
-                        == st_line.move_name:
-                    # there can be several moves linked to a statement line but
-                    #  maximum one created by the line itself
-                    aml_to_cancel |= line
-                    payment_to_cancel |= line.payment_id
+            counterpart_lines = self.env['account.move.line']
+            for line in st_line.move_id.line_ids:
+                counterpart_lines |= line.matched_debit_ids.debit_move_id
+                counterpart_lines |= line.matched_credit_ids.credit_move_id
+            counterpart_lines = counterpart_lines - st_line.move_id.line_ids
+            payment_to_cancel |= counterpart_lines.mapped('payment_id')
         payment_groups = payment_to_cancel.mapped('payment_group_id')
-        res = super(
-            AccountBankStatementLine, self).button_cancel_reconciliation()
+        res = self.action_undo_reconciliation()
         if payment_groups:
             payment_groups.write({'state': 'draft'})
             payment_groups.unlink()
         return res
 
-    def process_reconciliation(self, counterpart_aml_dicts=None,
-                               payment_aml_rec=None, new_aml_dicts=None):
-        """ Pass reconcilation parameters by context in order to
-        capture them in the post() method and be able to get a better
-        partner_id/partner_type interpetration
-        """
-        return super(AccountBankStatementLine, self.with_context(
-            counterpart_aml_dicts=counterpart_aml_dicts,
-            new_aml_dicts=new_aml_dicts,
-            create_from_statement=True,
-            )).process_reconciliation(
-                counterpart_aml_dicts=counterpart_aml_dicts,
-                payment_aml_rec=payment_aml_rec, new_aml_dicts=new_aml_dicts)
+    def process_reconciliation(self, counterpart_aml_dicts=None, payment_aml_rec=None, new_aml_dicts=None):
+        self.ensure_one()
+        if payment_aml_rec:
+            own_line = self.move_id.line_ids.filtered(
+                lambda l: not l.reconciled
+                and l.account_id == payment_aml_rec.account_id
+                and (l.debit > 0) != (payment_aml_rec.debit > 0)
+            )
+            if own_line:
+                (own_line + payment_aml_rec).reconcile()
+            # IMportante! hay que contemplar counterpart_aml_dicts / new_aml_dicts si algún otro
+            # flujo del sistema los usa, si es asi hay que buscar la ruta de porque y cuando lo usa.
+            # Para la incidencia SW-1846, se declaranan en none.
+            return True
+        return True
