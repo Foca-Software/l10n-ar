@@ -8,7 +8,8 @@
     "application": False,
     'installable': True,
     "depends": [
-        "account"
+        "account",
+        "account_payment_pro"
     ],
     "data": [
         'security/security.xml',
