@@ -157,7 +157,7 @@
                                     type="object"/>
                             
                             <field name="to_pay_move_line_ids" 
-                                   domain="[('partner_id', 'in', [commercial_partner_id]),('account_id.account_type', '=', account_internal_type),('account_id.reconcile', '=', True),('reconciled', '=', False),('full_reconcile_id', '=', False),('company_id', '=', company_id)]" 
+                                   domain="[('partner_id.commercial_partner_id', '=', commercial_partner_id),('account_id.account_type', '=', account_internal_type),('account_id.reconcile', '=', True),('reconciled', '=', False),('full_reconcile_id', '=', False),('company_id', '=', company_id),('move_id.debo_payment_type', '=', 'checking_account')]" 
                                    groups="base.group_multi_company" />
                         </page>
                         <page string="Lineas de pagos">
@@ -356,6 +356,20 @@
                                                             </page>
                                                             <page name="Deudas" string="Deudas" invisible="state == 'paid'">
                                                                 <field name="to_pay_move_line_ids" readonly="1">
+                                                                </field>
+                                                            </page>
+                                                            <page name="Cheques" string="Cheques" invisible="payment_method_code not in ['in_third_party_checks', 'out_third_party_checks', 'return_third_party_checks', 'new_third_party_checks', 'own_checks']">
+                                                                 <field name="l10n_latam_new_check_ids" readonly="0">
+                                                                    <list name="new_checks" editable="bottom">
+                                                                        <field name="company_id" column_invisible="True"/>
+                                                                        <field name="currency_id" column_invisible="True"/>
+                                                                        <field name="name"/>
+                                                                        <field name="bank_id" column_invisible="parent.payment_method_code == 'own_checks'"/>
+                                                                        <field name="issuer_vat" column_invisible="parent.payment_method_code == 'own_checks'"/>
+                                                                        <field name="payment_date"/>
+                                                                        <field name="amount"/>
+                                                                        <button type="object" name="get_formview_action" icon="fa-pencil-square-o" title="open" help="Open" column_invisible="parent.state == 'draft'"/>
+                                                                    </list>
                                                                 </field>
                                                             </page>
                                                             <page name="Retenciones" string="Retenciones">
