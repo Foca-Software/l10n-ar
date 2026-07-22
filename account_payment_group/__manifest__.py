@@ -8,7 +8,8 @@
     "application": False,
     'installable': True,
     "depends": [
-        "account"
+        "account",
+        "l10n_ar_tax"
     ],
     "data": [
         'security/security.xml',
