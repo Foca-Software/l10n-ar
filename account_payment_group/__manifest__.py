@@ -9,7 +9,8 @@
     'installable': True,
     "depends": [
         "account",
-        "l10n_ar_tax"
+        "l10n_ar_tax",
+        "account_debt_management"
     ],
     "data": [
         'security/security.xml',
