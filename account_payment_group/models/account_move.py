@@ -1,4 +1,4 @@
-from odoo import models, api, fields, _
+from odoo import Command, models, api, fields, _
 from odoo.exceptions import ValidationError
 
 class AccountMove(models.Model):
@@ -81,7 +81,7 @@ class AccountMove(models.Model):
                 partner_type = 'customer'
 
             payment_type = 'inbound'
-            payment_method = pay_journal._get_manual_payment_method_id(payment_type)
+            payment_method_line = pay_journal._get_manual_payment_method_line_id(payment_type)
 
             payment = rec.env[
                 'account.payment'].with_context(pay_now=True).create({
@@ -91,7 +91,7 @@ class AccountMove(models.Model):
                         'payment_type': payment_type,
                         'company_id': rec.company_id.id,
                         'journal_id': pay_journal.id,
-                        'payment_method_id': payment_method.id,
+                        'payment_method_line_id': payment_method_line.id,
                         'to_pay_move_line_ids': [Command.set(rec.open_move_line_ids.ids)],
                     })
 
@@ -102,7 +102,7 @@ class AccountMove(models.Model):
             if (partner_type == 'supplier' and payment.payment_difference >= 0.0 or
                partner_type == 'customer' and payment.payment_difference < 0.0):
                 payment.payment_type = 'outbound'
-                payment.payment_method_id = pay_journal._get_manual_payment_method_id(payment_type).id
+                payment.payment_method_line_id = pay_journal._get_manual_payment_method_line_id(payment_type).id
             payment.amount = abs(payment.payment_difference)
             payment.action_post()
 
