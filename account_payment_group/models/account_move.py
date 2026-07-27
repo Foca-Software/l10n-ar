@@ -83,6 +83,21 @@ class AccountMove(models.Model):
             payment_type = 'inbound'
             payment_method_line = pay_journal._get_manual_payment_method_line_id(payment_type)
 
+            # Creamos el payment.group primero, con las mismas líneas a pagar
+            # que le vamos a poner al payment. Si no lo hacemos, el create()
+            # de account.payment (ver account_payment_group/models/
+            # account_payment.py) crea automáticamente un payment.group vacío
+            # (sin to_pay_move_line_ids) porque acá no se lo pasamos, y la
+            # constraint _check_to_pay_move_line_ids_payment_group revienta
+            # al comparar las líneas del payment contra las (vacías) del grupo.
+            payment_group = rec.env['account.payment.group'].create({
+                'company_id': rec.company_id.id,
+                'partner_type': partner_type,
+                'partner_id': rec.commercial_partner_id.id,
+                'payment_date': rec.invoice_date,
+                'to_pay_move_line_ids': [Command.set(rec.open_move_line_ids.ids)],
+            })
+
             payment = rec.env[
                 'account.payment'].with_context(pay_now=True).create({
                         'date': rec.invoice_date,
@@ -92,6 +107,7 @@ class AccountMove(models.Model):
                         'company_id': rec.company_id.id,
                         'journal_id': pay_journal.id,
                         'payment_method_line_id': payment_method_line.id,
+                        'payment_group_id': payment_group.id,
                         'to_pay_move_line_ids': [Command.set(rec.open_move_line_ids.ids)],
                     })
 
