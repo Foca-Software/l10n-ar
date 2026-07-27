@@ -23,7 +23,7 @@ class AccountPaymentGroup(models.Model):
                 old_snapshot[rec.id] = {f: rec[f] for f in fields_to_audit}
         audit_debt = any((k in vals for k in DEBT_LINE_VALS_KEYS))
         if audit_debt:
-            self._check_debt_lines_locked_by_payments()
+            self._check_debt_lines_locked_by_payments(vals)
         debt_before = {}
         if audit_debt:
             for rec in self:
@@ -54,19 +54,30 @@ class AccountPaymentGroup(models.Model):
                     rec._post_group_changed_audit(changes)
         return result
 
-    def _check_debt_lines_locked_by_payments(self):
+    def _check_debt_lines_locked_by_payments(self, vals):
         """si el grupo ya tiene al menos un medio de pago cargado
         (payment_ids), no se permite agregar ni quitar líneas a pagar
         (to_pay_move_line_ids / debt_move_line_ids). Primero hay que
         eliminar los medios de pago cargados.
+
+        Solo bloqueamos si el valor realmente cambia: durante el post()
+        el propio compute puede reescribir el campo con el mismo valor
+        (resincronización interna), y eso no debe contar como una edición
+        del usuario. Ver SW-2040.
         """
         for rec in self:
-            if rec.payment_ids:
-                raise UserError(_(
-                    'No se pueden modificar las líneas a pagar mientras '
-                    'existan medios de pago cargados. Elimine primero los '
-                    'medios de pago.'
-                ))
+            if not rec.payment_ids:
+                continue
+            for key in DEBT_LINE_VALS_KEYS:
+                if key not in vals:
+                    continue
+                new_ids = set(rec._fields[key].convert_to_cache(vals[key], rec))
+                if new_ids != set(rec[key].ids):
+                    raise UserError(_(
+                        'No se pueden modificar las líneas a pagar mientras '
+                        'existan medios de pago cargados. Elimine primero los '
+                        'medios de pago.'
+                    ))
 
     def _is_auditable_field(self, name):
         field = self._fields.get(name)
