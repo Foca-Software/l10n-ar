@@ -223,13 +223,17 @@ class AccountPayment(models.Model):
 
     @api.constrains("to_pay_move_line_ids", "payment_group_id")
     def _check_to_pay_move_line_ids_payment_group(self):
+        """Cuando el pago pertenece a un grupo de pago, las líneas a pagar se
+        definen desde el grupo (y se sincronizan automáticamente mediante
+        el compute de to_pay_move_line_ids), por lo que no se permite
+        agregar ni quitar líneas manualmente desde el pago individual.
+        """
+        if self.env.context.get('skip_payment_group_lines_check'):
+            return
         for rec in self:
-            # Solo validamos mientras el pago sigue en borrador: una vez
-            # posteado, _compute_to_pay_move_lines ya no sincroniza este
-            # campo (se restringe a records en estado draft), por lo que
-            # comparar acá después de postear compara contra un valor
-            # obsoleto y genera un falso positivo. Ver SW-2040.
-            if rec.state == 'draft' and rec.payment_group_id and rec.to_pay_move_line_ids != rec.payment_group_id.to_pay_move_line_ids:
+            if not rec.payment_group_id:
+                continue
+            if set(rec.to_pay_move_line_ids.ids) != set(rec.payment_group_id.to_pay_move_line_ids.ids):
                 raise ValidationError(_(
                     "No puede agregar ni quitar líneas a pagar en un pago que "
                     "pertenece a un grupo de pago. Modifique las líneas a pagar "
