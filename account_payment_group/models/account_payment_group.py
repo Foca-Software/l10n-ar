@@ -164,12 +164,19 @@ class AccountPaymentGroup(models.Model):
         string="Estado",
         index=True,
     )
-    move_lines_domain = [
-        ('move_id.state', '=', 'posted'),
-        ('account_id.reconcile', '=', True),
-        ('reconciled', '=', False),
-        ('full_reconcile_id', '=', False),
-    ]
+    # domain='move_lines_domain' (nombre de atributo de clase) no funciona:
+    # Field.domain solo acepta un callable o un string-expresión evaluado con
+    # los campos del propio record, no el nombre de un atributo Python
+    # arbitrario. Quedaba sin filtrar por partner/compañía/tipo de cuenta,
+    # a diferencia de _get_to_pay_move_lines_domain() (usado por add_all()),
+    # así que en el widget aparecían líneas de cualquier partner/compañía.
+    # to_pay_domain precalcula el mismo resultado de _get_to_pay_move_lines_domain()
+    # como recordset, y se referencia por nombre en el domain de los campos
+    # (patrón de compute-field-as-domain-source para domains dinámicos).
+    to_pay_domain = fields.Many2many(
+        'account.move.line',
+        compute='_compute_to_pay_domain',
+    )
     debt_move_line_ids = fields.Many2many(
         'account.move.line',
         compute='_compute_debt_move_line_ids',
@@ -178,7 +185,7 @@ class AccountPaymentGroup(models.Model):
         help="Los Pagos serán automáticamente conciliados con las líneas más viejas de esta"
         "lista (por fecha). Puede eliminar cualquier línea"
         " que no quiera conciliar.",
-        domain='move_lines_domain',
+        domain="[('id', 'in', to_pay_domain)]",
         readonly=False,
     )
     has_outstandin = fields.Boolean('Has Outstanding')
@@ -190,7 +197,7 @@ class AccountPaymentGroup(models.Model):
         string="Lineas a Pagar",
         help='Estas líneas son las que el usuario seleccionó para pagar.',
         copy=False,
-        domain='move_lines_domain',
+        domain="[('id', 'in', to_pay_domain)]",
         readonly=False,
         auto_join=True,
     )
@@ -577,6 +584,15 @@ class AccountPaymentGroup(models.Model):
             del field_onchange[field]
         return super(AccountPaymentGroup, self).onchange(
             values, field_name, field_onchange)
+
+    @api.depends('partner_id')
+    def _compute_to_pay_domain(self):
+        for rec in self:
+            if rec.partner_id and rec.company_id:
+                rec.to_pay_domain = rec.env['account.move.line'].search(
+                    rec._get_to_pay_move_lines_domain()).ids
+            else:
+                rec.to_pay_domain = False
 
     def _get_to_pay_move_lines_domain(self):
         self.ensure_one()
