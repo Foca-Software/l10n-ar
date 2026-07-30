@@ -376,16 +376,10 @@
                                                                 </field>
                                                             </page>
                                                             <page name="Cheques" string="Cheques" invisible="payment_method_code not in ['in_third_party_checks', 'out_third_party_checks', 'return_third_party_checks', 'new_third_party_checks', 'own_checks']">
-                                                                 <field name="l10n_latam_new_check_ids" readonly="0">
-                                                                    <list name="new_checks" editable="bottom">
-                                                                        <field name="company_id" column_invisible="True"/>
-                                                                        <field name="currency_id" column_invisible="True"/>
+                                                                 <field name="l10n_latam_move_check_ids" readonly="0">
+                                                                    <list name="checks" editable="bottom">
                                                                         <field name="name"/>
-                                                                        <field name="bank_id" column_invisible="parent.payment_method_code == 'own_checks'"/>
-                                                                        <field name="issuer_vat" column_invisible="parent.payment_method_code == 'own_checks'"/>
-                                                                        <field name="payment_date"/>
                                                                         <field name="amount"/>
-                                                                        <button type="object" name="get_formview_action" icon="fa-pencil-square-o" title="open" help="Open" column_invisible="parent.state == 'draft'"/>
                                                                     </list>
                                                                 </field>
                                                             </page>
