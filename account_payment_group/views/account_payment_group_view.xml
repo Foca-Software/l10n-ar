@@ -21,6 +21,22 @@
 </record>
 
 
+<record id="view_res_partner_payment_group_list" model="ir.ui.view">
+    <field name="name">res.partner.payment.group.list</field>
+    <field name="model">res.partner</field>
+    <field name="arch" type="xml">
+        <!-- Vista liviana para el "Buscar más..." de partner_id del recibo: la
+             base.view_partner_tree por defecto acumula columnas compute pesadas
+             de otros módulos (ej. debt_balance de account_debt_management, no
+             almacenado, recalcula credit/debit por partner en cada lectura) que
+             hacen muy lenta la búsqueda acá. -->
+        <list>
+            <field name="display_name" string="Nombre"/>
+            <field name="vat" string="CUIT"/>
+        </list>
+    </field>
+</record>
+
 <record id="view_account_payment_group_form" model="ir.ui.view">
     <field name="name">Pago Múltiple</field>
     <field name="model">account.payment.group</field>
@@ -31,6 +47,7 @@
             <field name="account_internal_type" invisible="1"/>
             <field name="id" invisible="1"/>
             <field name="commercial_partner_id" invisible="1"/>
+            <field name="to_pay_domain" invisible="1"/>
             <field name="partner_type" invisible="1"/>
             <field name="payment_subtype" invisible="1"/>
             <field name="pop_up" invisible="1"/>
@@ -89,7 +106,7 @@
                     <group>
                         <field name="company_id" options="{'no_create': True, 'no_open': True}" groups="base.group_multi_company" invisible="context.get('pop_up')"/>
                         <field name="currency_id" invisible="1"/>
-			<field name="partner_id" context="{'default_is_company': True, 'default_supplier': partner_type == 'supplier', 'default_customer': partner_type == 'customer'}" 
+			<field name="partner_id" context="{'default_is_company': True, 'default_supplier': partner_type == 'supplier', 'default_customer': partner_type == 'customer', 'list_view_ref': 'account_payment_group.view_res_partner_payment_group_list'}"
 				invisible="context.get('pop_up')"
                          readonly="state in ['posted', 'confirmed', 'cancel']" />
                     </group>
@@ -156,12 +173,12 @@
                                     invisible="state != 'draft'" 
                                     type="object"/>
                             
-                            <field name="to_pay_move_line_ids" 
-                                domain="[('partner_id.commercial_partner_id', '=', commercial_partner_id),('account_id.account_type', '=', account_internal_type),('account_id.reconcile', '=', True),('reconciled', '=', False),('full_reconcile_id', '=', False),('company_id', '=', company_id),('move_id.debo_payment_type', '=', 'checking_account'),'!','&amp;',('move_id.name', '=like', 'RE-%'),'!','|',('move_id.name', '=like', 'RE-X%'),('move_id.name', '=like', 'RE-C%')]"  
+                            <field name="to_pay_move_line_ids"  
                                 groups="base.group_multi_company" />
                         </page>
                         <page string="Lineas de pagos">
                                    <field name="payment_ids"
+		                                  widget="payment_group_payment_ids"
 		                                  context="{
 		                                      'list_view_ref': 'account_payment_group.view_account_payment_from_group_list',
 		                                      'kanban_view_ref': 'account_payment_group.view_account_payment_kanban_mobile',
@@ -373,7 +390,20 @@
                                                                 </field>
                                                             </page>
                                                             <page name="Retenciones" string="Retenciones">
-                                                                <field name="l10n_ar_withholding_line_ids">
+                                                                <field name="l10n_ar_withholding_line_ids" nolabel="1" colspan="2" readonly="state != 'draft'">
+                                                                    <list editable="bottom">
+                                                                        <field name="withholding_sequence_id" column_invisible="True"/>
+                                                                        <field name="company_id" column_invisible="True"/>
+                                                                        <field name="currency_id" column_invisible="True"/>
+                                                                        <field name="tax_id" domain="[('l10n_ar_withholding_payment_type', '=', parent.partner_type), ('company_id', 'parent_of', parent.company_id)]" options="{'no_create': True}"/>
+                                                                        <field name="name" readonly="withholding_sequence_id"/>
+                                                                        <field name="base_amount" column_invisible="parent.partner_type == 'supplier'" optional="hide"/>
+                                                                        <field name="base_amount" column_invisible="parent.partner_type != 'supplier'"/>
+                                                                        <field name="amount"/>
+                                                                        <field name="ref" optional="hide" readonly="l10n_ar_tax_type in ['earnings', 'earnings_scale']" force_save="1"/>
+                                                                        <button name="%(l10n_ar_tax.action_report_withholding_certificate)d" icon="fa-print " title="Imprimir comprobante de retención" type="action" invisible="parent.partner_type != 'supplier' or parent.state == 'draft' or amount == 0"/>
+                                                                        <button name="action_l10n_ar_payment_withholding_tree" icon="fa-bars" title="Ver retenciones anteriores" type="object" invisible="parent.partner_type != 'supplier' or l10n_ar_tax_type not in ['earnings', 'earnings_scale']"/>
+                                                                    </list>
                                                                 </field>
                                                             </page>
                                                         </notebook>

@@ -22,8 +22,8 @@ class AccountPaymentGroup(models.Model):
             for rec in self:
                 old_snapshot[rec.id] = {f: rec[f] for f in fields_to_audit}
         audit_debt = any((k in vals for k in DEBT_LINE_VALS_KEYS))
-        if audit_debt:
-            self._check_debt_lines_locked_by_payments(vals)
+        #if audit_debt:
+        #    self._check_debt_lines_locked_by_payments(vals)
         debt_before = {}
         if audit_debt:
             for rec in self:

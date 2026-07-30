@@ -23,5 +23,10 @@
         'report/report_payment_group.xml',
         #'data/mail_template_data.xml',
     ],
+    "assets": {
+        "web.assets_backend": [
+            "account_payment_group/static/src/js/payment_ids_force_save.js",
+        ],
+    },
     "demo": [],
 }
