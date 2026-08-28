@@ -158,7 +158,10 @@
                             </tr>
                         </thead>
                         <tbody class="invoice_tbody">
-                            <tr t-foreach="o.payment_ids" t-as="p">
+                            <!-- Ocultamos el pago cuando es una retención "manual" (un account.payment creado solo para
+                                 representar la retención) ya que su importe se muestra en la fila de la retención en la
+                                 tabla de abajo (p.l10n_ar_withholding_line_ids); mostrarlo también acá duplica el importe -->
+                            <tr t-foreach="o.payment_ids.filtered(lambda p: not (p.l10n_ar_withholding_line_ids and sum(p.l10n_ar_withholding_line_ids.mapped('amount')) == p.amount))" t-as="p">
                                 <td>
                                     <span t-if="p.journal_id" t-field="p.journal_id"/>
                                 </td>
