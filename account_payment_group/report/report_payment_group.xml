@@ -400,8 +400,13 @@
             <field name="report_type">qweb-pdf</field>
             <field name="report_name">account_payment_group.report_payment_group</field>
             <field name="report_file">account_payment_group.report_payment_group</field>
-            <field name="attachment">(object.state in ('posted')) and ((object.name or '').replace('/','')+'.pdf')</field>
-            <field name="attachment_use">True</field>
+            <!-- Desactivado: con attachment_use=True, Odoo cachea el PDF la primera vez que se
+                 imprime un documento y lo reutiliza en todas las descargas siguientes sin volver
+                 a renderizar el reporte, aunque el template cambie despues. Eso hace que cualquier
+                 fix al reporte quede "invisible" para todo lo ya impreso hasta que alguien borre
+                 a mano el ir.attachment cacheado. Sin caché, cada descarga regenera el PDF fresco
+                 con el template vigente. -->
+            <field name="attachment_use">False</field>
         </record>
 
     </data>
